@@ -1,0 +1,156 @@
+Sub GerarPdf()
+    
+    'Declaração de variáveis
+    Dim endereco, nomeArq As String
+    Dim nrocertificado, totalcertificados As Integer
+    
+    'Instrução para desabilitar a atualização de tela
+    Application.ScreenUpdating = False
+    
+    'O algoritmo deve começar na planilha ProducaoCertificado
+    Sheets("ProducaoCertificado").Select
+    
+    'Estrutura de decisão para definir se apenas um certificado selecionado será gerado ou se todos os cadastrados
+    If MsgBox("Você deseja gerar só o certificado que está selecionado?", vbYesNo) = vbYes Then
+
+    '>>>>>>>>Aqui começa o algoritmo para o caso de ser necessário gerar apenas um certificado específico
+        'Armazena na variável endereco o local onde os certificados devem ser armazenados
+        endereco = Range("E5").Value
+        
+        'Armazena na variável nrocertificado o Número do certificado que deve ser gerado
+        nrocertificado = Range("B5").Value
+        
+        'Estrutura de decisão: se o evento tiver atividades específicas, o nome do arquivo em pdf a ser gerado deve
+        'conter o nome dessa atividade e o nome do participante.
+        'Caso contrário, basta colocar o tipo de participação e o nome do participante.
+        If Range("J9").Value <> "Não se aplica" Then
+            nomeArq = Left(Range("J9").Value, 20) & "_" & Range("G9").Value
+        Else
+            nomeArq = Range("I9").Value & "_" & Range("G9").Value
+        End If
+               
+        'Nesta etapa, o algoritmo deve ir para a planilha CertificadoProntoImpressao ou, se for o certificado do
+        'coordenador geral, para a planilha CertificadoProntoImp_CoordGeral
+        If Left(Range("I9").Value, 11) = "Coordenador" Then
+            Sheets("CertificadoProntoImp_CoordGeral").Select
+        Else
+            Sheets("CertificadoProntoImpressao").Select
+        End If
+        
+        'Nesta etapa o texto gerado por funções do Excel deve ser copiado e colado como valor para eliminar a função existente
+        Range("B13").Select
+        Selection.Copy
+        Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+            :=False, Transpose:=False
+        
+        'Aqui apenas os textos de interesse são colocados em negrito
+        With ActiveCell.Characters(Start:=InStr(1, ActiveCell.Value, Sheets("ProducaoCertificado").Range("G9").Value, vbTextCompare), Length:=Len(Sheets("ProducaoCertificado").Range("G9").Value)).Font
+            .FontStyle = "Bold"
+        End With
+        
+        With ActiveCell.Characters(Start:=InStr(1, ActiveCell.Value, Sheets("ProducaoCertificado").Range("K9").Value, vbTextCompare), Length:=Len(Sheets("ProducaoCertificado").Range("K9").Value)).Font
+            .FontStyle = "Bold"
+        End With
+        
+        'Algoritmo para salvar como pdf
+        ChDir "" & endereco & ""
+        ActiveSheet.ExportAsFixedFormat Type:=xlTypePDF, Filename:= _
+            "" & endereco & "\" & nomeArq & ".pdf", Quality:=xlQualityStandard, _
+            IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:= _
+            False
+            
+        'A função é reinserida de modo a preparar a planilha CertificadoProntoImpressao para o próximo ciclo
+        Range("B13").Select
+        ActiveCell.FormulaR1C1 = "=ProducaoCertificado!R[-9]C[17]"
+        
+        'Retorno para a planilha ProducaoCertificado para cadastrar que a geração do certificado está ok
+        Sheets("ProducaoCertificado").Select
+        Range("B13").Select
+        Do While ActiveCell.Value <> nrocertificado
+            ActiveCell.Offset(1, 0).Select
+        Loop
+        ActiveCell.Offset(0, 15).Value = "Gerado"
+
+'########################################################################################################
+    '>>>>>>>>Aqui começa o algoritmo para gerar TODOS os certificados de 1 até o número informado pelo usuário
+    ElseIf MsgBox("Deseja então gerar todos os certificados?", vbYesNo) = vbYes Then
+        
+        'Define o valor 1 no campo Gerar Certificado Nro.
+        Range("B5").Value = 1
+        
+        'Obtém do usuário a informação de quantos certificados devem ser gerados
+        totalcertificados = InputBox("Informe o total de certificados que você precisa gerar:")
+        
+        'Laço de repetição para que todos os certificados informados sejam gerados
+        Do While Range("B5").Value <> totalcertificados + 1
+
+            'Armazena na variável endereco o local onde os certificados devem ser armazenados
+            endereco = Range("E5").Value
+            
+            'Armazena na variável nrocertificado o Número do certificado que deve ser gerado
+            nrocertificado = Range("B5").Value
+            
+            'Estrutura de decisão: se o evento tiver atividades específicas, o nome do arquivo em pdf a ser gerado deve
+            'conter o nome dessa atividade e o nome do participante.
+            'Caso contrário, basta colocar o tipo de participação e o nome do participante.
+            If Range("J9").Value <> "Não se aplica" Then
+                nomeArq = Left(Range("J9").Value, 20) & "_" & Range("G9").Value
+            Else
+                nomeArq = Range("I9").Value & "_" & Range("G9").Value
+            End If
+        
+            'Nesta etapa, o algoritmo deve ir para a planilha CertificadoProntoImpressao ou, se for o certificado do
+            'coordenador geral, para a planilha CertificadoProntoImp_CoordGeral
+            If Left(Range("I9").Value, 11) = "Coordenador" Then
+                Sheets("CertificadoProntoImp_CoordGeral").Select
+            Else
+                Sheets("CertificadoProntoImpressao").Select
+            End If
+
+            'Nesta etapa o texto gerado por funções do Excel deve ser copiado e colado como valor para eliminar a função existente
+            Range("B13").Select
+            Selection.Copy
+            Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+                :=False, Transpose:=False
+            
+            'Aqui apenas os textos de interesse são colocados em negrito
+            With ActiveCell.Characters(Start:=InStr(1, ActiveCell.Value, Sheets("ProducaoCertificado").Range("G9").Value, vbTextCompare), Length:=Len(Sheets("ProducaoCertificado").Range("G9").Value)).Font
+                .FontStyle = "Bold"
+            End With
+            
+            With ActiveCell.Characters(Start:=InStr(1, ActiveCell.Value, Sheets("ProducaoCertificado").Range("K9").Value, vbTextCompare), Length:=Len(Sheets("ProducaoCertificado").Range("K9").Value)).Font
+                .FontStyle = "Bold"
+            End With
+        
+            'Salvar como pdf
+            ChDir "" & endereco & ""
+            ActiveSheet.ExportAsFixedFormat Type:=xlTypePDF, Filename:= _
+                "" & endereco & "\" & nomeArq & ".pdf", Quality:=xlQualityStandard, _
+                IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:= _
+                False
+        
+            'A função é reinserida de modo a preparar a planilha CertificadoProntoImpressao para o próximo ciclo
+            Range("B13").Select
+            ActiveCell.FormulaR1C1 = "=ProducaoCertificado!R[-9]C[17]"
+            
+            'Retorno para a planilha ProducaoCertificado para cadastrar que a geração do certificado está ok
+            Sheets("ProducaoCertificado").Select
+            Range("B13").Select
+            Do While ActiveCell.Value <> nrocertificado
+                ActiveCell.Offset(1, 0).Select
+            Loop
+            ActiveCell.Offset(0, 15).Value = "Gerado"
+            
+            'Incremento do campo Gerar Certificado Nro. para que o próximo certificado seja gerado
+            Range("B5").Value = Range("B5").Value + 1
+        Loop
+        
+    End If
+    
+    'Instrução para reabilitar a atualização de tela
+    Application.ScreenUpdating = True
+    
+    'Mensagem de sucesso e que garante que o algoritmo funcionou normalmente (começo, meio e fim)
+    MsgBox ("Tarefa concluída!")
+
+End Sub
